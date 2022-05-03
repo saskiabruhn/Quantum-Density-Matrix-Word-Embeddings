@@ -8,12 +8,10 @@ import numpy as np
 import torch
 from collections import Counter
 import math
-from transformers import *
 import random
 
 
 class SkipGramVocab:
-
     def __init__(self, corpus_path, min_count, subsampling, neg_table_size):
         self.corpus_path = corpus_path
         self.min_count = min_count
@@ -58,9 +56,14 @@ class SkipGramVocab:
                 self.itos.append(word)
                 self.train_count += self.counter[word]
 
-        print("Discarded %d words with count less than %d." % (discard_count, self.min_count))
+        print(
+            "Discarded %d words with count less than %d."
+            % (discard_count, self.min_count)
+        )
         print("Final vocab size is %d." % len(self.itos))
-        print("Training words down from %d to %d." % (raw_train_count, self.train_count))
+        print(
+            "Training words down from %d to %d." % (raw_train_count, self.train_count)
+        )
 
     def setup_negsampling(self):
         # Compute distribution for negative sampling
@@ -81,11 +84,16 @@ class SkipGramVocab:
         print("Subsampling count threshold is %d." % threshold_count)
 
         for word in self.itos:
-            sample_prob = (math.sqrt(self.counter[word] / threshold_count) + 1) * (threshold_count / self.counter[word])
+            sample_prob = (math.sqrt(self.counter[word] / threshold_count) + 1) * (
+                threshold_count / self.counter[word]
+            )
             self.subsampling_probs[word] = min(sample_prob, 1.0)
             if sample_prob < 1.0:
                 subsampling_count += 1
-        print("Subsampling %d words with frequency greater than %f." % (subsampling_count, self.subsampling))
+        print(
+            "Subsampling %d words with frequency greater than %f."
+            % (subsampling_count, self.subsampling)
+        )
 
     def contains(self, word):
         return word in self.stoi
@@ -98,13 +106,11 @@ class SkipGramVocab:
 
 
 class Word2DMVocab:
-
     def __init__(self, corpus_path, min_count, subsampling, neg_table_size):
         self.corpus_path = corpus_path
         self.min_count = min_count
         self.subsampling = subsampling
         self.neg_table_size = neg_table_size
-
         self.num_sentences = 0
         # number of words in text usable for training after discarding those that occur less often than min_count
         self.train_count = 0
@@ -147,9 +153,14 @@ class Word2DMVocab:
                 self.itos.append(word)
                 self.train_count += self.counter[word]
 
-        print("Discarded %d words with count less than %d." % (discard_count, self.min_count))
+        print(
+            "Discarded %d words with count less than %d."
+            % (discard_count, self.min_count)
+        )
         print("Final vocab size is %d." % len(self.itos))
-        print("Training words down from %d to %d." % (raw_train_count, self.train_count))
+        print(
+            "Training words down from %d to %d." % (raw_train_count, self.train_count)
+        )
 
     def setup_negsampling(self):
         # Compute distribution for negative sampling
@@ -161,7 +172,6 @@ class Word2DMVocab:
         self.neg_dist = np.power(self.neg_dist, 0.75)
         # normalize --> proability for a word occuring in the text
         self.neg_dist = self.neg_dist / self.neg_dist.sum()
-
         # multiply by neg_table_size and round
         self.neg_dist = np.round(self.neg_dist * self.neg_table_size)
         #  append the word_index count times to the list
@@ -181,11 +191,16 @@ class Word2DMVocab:
         for word in self.itos:
             # probability of keeping the word
             # http://mccormickml.com/2017/01/11/word2vec-tutorial-part-2-negative-sampling/
-            sample_prob = (math.sqrt(self.counter[word] / threshold_count) + 1) * (threshold_count / self.counter[word])
+            sample_prob = (math.sqrt(self.counter[word] / threshold_count) + 1) * (
+                threshold_count / self.counter[word]
+            )
             self.subsampling_probs[word] = min(sample_prob, 1.0)
             if sample_prob < 1.0:
                 subsampling_count += 1
-        print("Subsampling %d words with frequency greater than %f." % (subsampling_count, self.subsampling))
+        print(
+            "Subsampling %d words with frequency greater than %f."
+            % (subsampling_count, self.subsampling)
+        )
 
     def contains(self, word):
         return word in self.stoi
@@ -198,7 +213,6 @@ class Word2DMVocab:
 
 
 class SkipGramDataset(Dataset):
-
     def __init__(self, corpus_path, vocab, window_size, neg_samples):
         self.window_size = window_size
         self.corpus_file = open(corpus_path, encoding="latin1")
@@ -218,12 +232,15 @@ class SkipGramDataset(Dataset):
             if not line:
                 self.corpus_file.seek(0, 0)
                 line = self.corpus_file.readline()
-
             if len(line) > 1:
                 words = line.split()
                 if len(words) > 1:
-                    word_ids = [self.vocab.stoi[word] for word in words
-                                if word in self.vocab.stoi and random.random() < self.vocab.subsampling_probs[word]]
+                    word_ids = [
+                        self.vocab.stoi[word]
+                        for word in words
+                        if word in self.vocab.stoi
+                        and random.random() < self.vocab.subsampling_probs[word]
+                    ]
                     return self.generate_sgns_predictions(word_ids)
 
     # sgns: skip-gram with negative sampling
@@ -236,21 +253,29 @@ class SkipGramDataset(Dataset):
         context_ids = []
         neg_ids = []
         for i, target_id in enumerate(word_ids):
-            window_ids = word_ids[max(0, i - dynamic_window_size): min(len(word_ids), i + dynamic_window_size + 1)]
+            window_ids = word_ids[
+                max(0, i - dynamic_window_size) : min(
+                    len(word_ids), i + dynamic_window_size + 1
+                )
+            ]
             window_ids = [word for word in window_ids if word != target_id]
             target_ids.extend([target_id] * len(window_ids))
             context_ids.extend(window_ids)
 
         if len(target_ids) == 0:
             return [], [], torch.LongTensor()
-###################################################################################################
+        ###################################################################################################
         # change neg sampling such that neg samples can not be the same as target and context word
         for i, t in enumerate(target_ids):
             neg_ids.append([])
             for j in range(self.neg_samples):
-                n_id = self.vocab.neg_table[random.choice(range(len(self.vocab.neg_table)))]
+                n_id = self.vocab.neg_table[
+                    random.choice(range(len(self.vocab.neg_table)))
+                ]
                 while n_id == target_ids[i] or n_id == context_ids[i]:
-                    n_id = self.vocab.neg_table[random.choice(range(len(self.vocab.neg_table)))]
+                    n_id = self.vocab.neg_table[
+                        random.choice(range(len(self.vocab.neg_table)))
+                    ]
                 neg_ids[i].append(n_id)
 
         # total_neg_samples = len(target_ids) * self.neg_samples
@@ -260,7 +285,7 @@ class SkipGramDataset(Dataset):
         # if len(neg_ids) != total_neg_samples:
         #     neg_ids = np.concatenate((neg_ids, self.vocab.neg_table[0: self.neg_index]))
         # neg_ids = torch.from_numpy(neg_ids).view(len(target_ids), -1)
-###################################################################################################
+        ###################################################################################################
 
         neg_ids = torch.Tensor(np.array(neg_ids)).long()
         return target_ids, context_ids, neg_ids
@@ -278,4 +303,3 @@ class SkipGramDataset(Dataset):
         neg_ids = torch.stack(neg_ids)
 
         return target_ids, context_ids, neg_ids
-
