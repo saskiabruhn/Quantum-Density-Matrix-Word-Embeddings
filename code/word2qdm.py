@@ -57,10 +57,12 @@ class Word2QDM(nn.Module):
 
     def get_density_matrices(self, parameter):
 
-        dms = torch.empty((len(parameter), self.vocab_size, self.dm_shape[0], self.dm_shape[1]))
+        dms = torch.empty(
+            (len(parameter), self.vocab_size, self.dm_shape[0], self.dm_shape[1])
+        )
 
         for j, params in enumerate(parameter):
             for i, p in enumerate(params):
-                dms[j,i,:,:] = self.circuit(p).reshape(self.dm_shape)
+                dms[j, i, :, :] = self.circuit(p).reshape(self.dm_shape)
 
         return dms
