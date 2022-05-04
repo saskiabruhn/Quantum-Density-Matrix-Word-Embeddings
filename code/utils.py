@@ -265,7 +265,7 @@ class SkipGramDataset(Dataset):
         if len(target_ids) == 0:
             return [], [], torch.LongTensor()
         ###################################################################################################
-        # change neg sampling such that neg samples can not be the same as target and context word
+        # adjust neg sampling such that neg samples can not be the same as target and context word
         for i, t in enumerate(target_ids):
             neg_ids.append([])
             for j in range(self.neg_samples):
