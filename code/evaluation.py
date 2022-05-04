@@ -1,17 +1,7 @@
 import argparse
 import math
 import torch
-
-
-def similarity(word1_dm, word2_dm):
-    # trace inner product
-    # Efficient way to compute trace of matrix product
-    trace = (word1_dm * word2_dm.T).sum().item()
-    # Normalise
-    trace = trace / (
-        math.sqrt((word1_dm**2).sum()) * math.sqrt((word2_dm**2).sum())
-    )
-    return trace
+from utils import similarity
 
 
 parser = argparse.ArgumentParser()
